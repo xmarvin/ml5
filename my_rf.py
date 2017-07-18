@@ -17,52 +17,46 @@ from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 from prepare_data import *
 from sklearn.grid_search import GridSearchCV
 
+from my_model import MyModel
 
-def current_params():
-  params = {       
-       'n_estimators': 1000,
-       'max_features': 'auto',
-       'min_samples_split': 3,
-       'min_samples_leaf': 2,
-       'max_leaf_nodes': 100,
-       'n_jobs': -1
-       }
-  return(params)
+class MyRfModel(MyModel):
 
-def my_train(x_train, x_val, y_train, y_val, nfold,rf_params=current_params()):
-  rf_params['random_state'] = nfold
-  clf = RandomForestClassifier(**rf_params)
-  clf.fit(x_train, y_train)
-  return clf
+  def current_params(self):
+    params = {       
+         'n_estimators': 1000,
+         'max_features': 'auto',
+         'min_samples_split': 3,
+         'min_samples_leaf': 2,
+         'max_leaf_nodes': 100,
+         'n_jobs': -1
+         }
+    return(params)
 
+  def train_with_params(self, x_train, x_val, y_train, y_val, nfold, params):
+    params['random_state'] = nfold
+    clf = RandomForestClassifier(**params)
+    clf.fit(x_train, y_train)
+    return clf
 
-def my_predict_proba(model, x):
-  return model.predict_proba(x)
+  def my_predict_proba(self, model, x):
+    return model.predict_proba(x)
 
-def my_process_test(t):  
-  return t
+  def my_process_test(self, t):  
+    return t
 
-def my_handle_output(res):
-  return np.array([r[1] for r in res])
+  def my_handle_output(self, res):
+    return np.array([r[1] for r in res])
 
-def hyperopt_score(rf_params):
-  bst = my_train(x_train, x_valid, y_train, y_valid, 0, rf_params)
-  dtest = my_process_test(x_valid)
-  y_pred = my_predict_proba(bst, dtest)
-  return log_loss(y_valid, y_pred)
-
-def run_hyperopt():
-  space = {       
-       'n_estimators': [1000,1200,1500,1800,2000],
-       'max_features': ['log2', 'auto', 'sqrt'],
-       'min_samples_split': [2,3,4,5],
-       'min_samples_leaf': [2,3,4,5],
-       'max_leaf_nodes': [50,60,75,100],
-       }
-  train, train_y = get_only_train()  
-  clf = RandomForestClassifier({'random_state': 0})
-  grid_search = GridSearchCV(clf, space, n_jobs=-1, cv=2)
-  grid_search.fit(train, train_y)
-  print(grid_search.best_params_)
-
-#run_hyperopt()
+  def run_hyperopt(self, x_train, x_valid, y_train, y_valid):
+    space = {       
+         'n_estimators': [1000,1200,1500,1800,2000],
+         'max_features': ['log2', 'auto', 'sqrt'],
+         'min_samples_split': [2,3,4,5],
+         'min_samples_leaf': [2,3,4,5],
+         'max_leaf_nodes': [50,60,75,100],
+         }
+    train, train_y = get_only_train()  
+    clf = RandomForestClassifier({'random_state': 0})
+    grid_search = GridSearchCV(clf, space, n_jobs=-1, cv=2)
+    grid_search.fit(train, train_y)
+    print(grid_search.best_params_)

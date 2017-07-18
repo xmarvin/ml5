@@ -4,6 +4,9 @@ import pdb
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 
+import os
+import glob
+
 NORM_PRESSURE = {
     1: {0:[116,72], 1: [120, 75], 2: [127,80], 3: [137,84], 4: [144,85], 5: [159, 85]},
     2: {0:[123,76], 1: [126, 79], 2: [129,81], 3: [135,83], 4: [142,85], 5: [142, 80]},
@@ -121,3 +124,13 @@ def get_test():
   test['active'] = test['active'].astype(int)
   test = make_features(test)
   return test
+
+def get_only_train_2lv():
+  train_df, train_y = get_only_train()
+  train = pd.DataFrame()
+  for fname in glob.glob("1lv/*.csv"):
+    name = os.path.basename(fname).split('.')[0]
+    fl = pd.read_csv(fname,header=None)
+    train[name] = fl[0]
+
+  return (train, train_y)

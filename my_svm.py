@@ -7,26 +7,41 @@ from sklearn.cross_validation import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import log_loss
 from sklearn import svm
-from save_module import *
-from prepare_data import *
-from my_fold import *
+from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
-train, train_y = get_train()
-test = get_test()
+from my_model import MyModel
 
-def my_train(x_train, x_val, y_train, y_val, kfold, param1=3):
-  clf = svm.SVC(kernel='rbf', probability=True, C=param1)
-  clf.fit(x_train.as_matrix(), y_train) 
-  return clf
+class MySvmModel(MyModel):
 
-def my_predict(neigh, x_val):
-  return neigh.predict(x_val)
+  def current_params(self):
+    res = {
+      'kernel':'rbf',
+      'probability': True,
+      'C': 3
+    }
+    return res
 
-def my_predict_proba(neigh, x_val):
-  return neigh.predict_proba(x_val)
+  def train_with_params(self, x_train, x_val, y_train, y_val, kfold, params):
+    clf = svm.SVC(**params)
+    clf.fit(x_train.as_matrix(), y_train) 
+    return clf
 
-def my_process_test(t):
-  return t.as_matrix()
+  def my_predict(self, neigh, x_val):
+    return neigh.predict(x_val)
 
-def my_handle_output(res):
-  return np.array([r[1] for r in res])  
+  def my_predict_proba(self, neigh, x_val):
+    return neigh.predict_proba(x_val)
+
+  def my_process_test(self, t):
+    return t.as_matrix()
+
+  def my_handle_output(self, res):
+    return np.array([r[1] for r in res])
+
+  def hyperopt_space(self):
+    space = {
+       'C': hp.choice('C', [0.01,0.3,1,3,10]),
+       'probability': True,
+       'kernel': hp.choice('kernel', ['linear', 'poly', 'rbf', 'sigmoid'])
+     }
+    return space      
